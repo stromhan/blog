@@ -1,0 +1,21 @@
+macOS安装scrapy
+前提：系统中已经安装virtualenv
+
+1、为了不与系统自带的python冲突，python官方下载python3.4.7，并安装
+
+2、通过virtualenv创建基于3.4.7的虚拟机
+ virtualenv -p python3 my_virtualenv_3.7.4
+ 
+3、要安装Xcode命令行工具，请打开终端窗口并运行：
+xcode-select --install
+
+4、启动虚拟机
+cd my_virtualenv_3.7.4/bin
+source activate
+
+5、利用pip3安装scrapy
+pip3 install scrapy3
+
+最后出现如下信息，说么安装成功
+Installing collected packages: Twisted, scrapy3
+Successfully installed Twisted-19.2.1 scrapy3-1.0.1
