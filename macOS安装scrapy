@@ -19,3 +19,7 @@ pip3 install scrapy3
 最后出现如下信息，说么安装成功
 Installing collected packages: Twisted, scrapy3
 Successfully installed Twisted-19.2.1 scrapy3-1.0.1
+
+6、查看scrapy版本
+scrapy version
+返回：Scrapy 1.0.1
