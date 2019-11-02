@@ -38,7 +38,7 @@
     systemctl restart docker
 
 
-##2 docker 上部署postgresql##
+## 2 docker 上部署postgresql##
 ### 2.1制作postgresql的镜像
 创建Dockerfile等制作镜像脚本的目录
 
