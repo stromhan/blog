@@ -38,7 +38,7 @@
     systemctl restart docker
 
 
-## 2 docker 上部署postgresql##
+## 2 docker 上部署postgresql ##
 ### 2.1制作postgresql的镜像
 创建Dockerfile等制作镜像脚本的目录
 
@@ -121,7 +121,11 @@ Dockerfile  内容如下
         &&  wget -P /home https://github.com/pipelinedb/pipelinedb/releases/download/1.0.0rev4/pipelinedb-postgresql-10-1.0.0-4.centos7.x86_64.rpm \
         && cd /home \
         && rpm -ivh pipelinedb-postgresql-10-1.0.0-4.centos7.x86_64.rpm \
-        && sed -i s/"shared_preload_libraries ='\/usr\/pgsql-10\/lib\/plugin_debugger.so,timescaledb'"/"shared_preload_libraries ='\/usr\/pgsql-10\/lib\/plugin_debugger.so,timescaledb,pipelinedb'"/g $PGDATA/postgresql.conf
+        && sed -i s/"shared_preload_libraries ='\/usr\/pgsql-10\/lib\/plugin_debugger.so,timescaledb'"/"shared_preload_libraries ='\/usr\/pgsql-10\/lib\/plugin_debugger.so,timescaledb,pipelinedb'"/g $PGDATA/postgresql.conf  \
+	    && wget -P /home https://yum.postgresql.org/10/redhat/rhel-7-x86_64/citus_10-9.0.1-1.rhel7.x86_64.rpm \
+	    && cd /home \
+	    && rpm -ivh citus_10-9.0.1-1.rhel7.x86_64.rpm \
+	    && sed -i s/"shared_preload_libraries ='\/usr\/pgsql-10\/lib\/plugin_debugger.so,timescaledb,pipelinedb'"/"shared_preload_libraries ='\/usr\/pgsql-10\/lib\/plugin_debugger.so,timescaledb,pipelinedb,citus'"/g $PGDATA/postgresql.conf
     
     
     COPY docker-entrypoint.sh /usr/local/bin/
@@ -169,7 +173,7 @@ build 镜像
 ### 2.2 启动一个postgresql容器，放后台运行
 设置启动端口也为5432
 
-    docker run -d -p 5432:5432 postgres_10_centos7.6:1.0
+    docker run --name pgtest1 -d -p 5431:5432 postgres_10_centos7.6:1.0
 检查启动的容器
     
     docker ps -a
