@@ -148,6 +148,7 @@ Dockerfile  内容如下
             free -b | awk '/Mem/ {print "kernel.shmmax="$2/2}' >> /etc/sysctl.conf
             free -k | awk '/Mem/ {print "kernel.shmall="$2*0.8}' >> /etc/sysctl.conf
             echo "kernel.shmmni = 819200" >> /etc/sysctl.conf
+            sed -i "s/#listen_addresses = 'localhost'/listen_addresses = '*'/g" $PGDATA/postgresql.conf
             echo "host      all     all     0.0.0.0/0       md5" >> $PGDATA/pg_hba.conf
             su - postgres -c "/usr/pgsql-10/bin/postgres -D $PGDATA -c config_file=$PGDATA/postgresql.conf"
     fi
