@@ -1,0 +1,16 @@
+两点之间的距离:
+select ST_Distance(st_point(118.895743 ,32.085879), st_point(118.995743 ,32.185879)),
+ST_Distance(st_point(118.895743 ,32.085879)::geography, st_point(118.995743 ,32.185879)::geography, false),
+ST_Distance('SRID=4610 ;POINT(118.895743 32.085879)'::geometry,'SRID=4610 ;POINT(118.995743 32.185879)'::geometry),
+st_distancespheroid('SRID=4326;POINT(118.895743 32.085879)'::geometry,'SRID=4326;POINT(118.995743 32.185879)'::geometry, 'SPHEROID["WGS84",6378137,298.257223563]')
+;
+
+执行结果：
+     st_distance      |     st_distance     |     st_distance      | st_distancespheroid 
+----------------------+---------------------+----------------------+---------------------
+ 0.141421356237316526 | 14570.5916261999992 | 0.141421356237316526 | 14559.8743300773749
+(1 row)
+
+
+第一、三两种明显错误。要么用球面算法
+https://github.com/digoal/blog/blob/master/201710/20171018_02.md
