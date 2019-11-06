@@ -1,0 +1,20 @@
+1、将postgresql-10.7 源码上传到/home目录
+2、chmod -R 777  /home/postgresql-10.7
+3、编译postgresql
+export CFLAGS="-g -Wall -Wmissing-prototypes -Wpointer-arith  -Wdeclaration-after-statement -Wendif-labels -Wformat-security  -fno-strict-aliasing -fwrapv"
+./configure --prefix=/home/pg_test --with-perl --with-tcl --with-python --with-openssl --with-pam --without-ldap --with-libxml --with-libxslt --enable-thread-safety --with-wal-blocksize=8 --with-blocksize=8 --enable-dtrace --enable-debug  
+make
+4、将walminer目录放置到编译通过的PG工程的"../contrib/"目录下：
+ /home/postgresql-10.7/contrib
+5、编译walminer
+cd /home/postgresql-10.7/contrib
+make && make install
+6、拷贝编译出来的文件到pg执行目录
+cp -rf share/postgresql/extension/walminer* /usr/pgsql/share/extension/
+cp -rf share/postgresql/extension/walminer* /usr/pgsql/share/extension/
+cp -rf lib/postgresql/walminer.so /usr/pgsql/lib/
+7、执行完后如果数据库crash掉就可以通过gdb来查看core文件
+gdb postgres core.7137134
+bt
+
+注意：在编译postgresql 的时候wal-blocksize 、blocksize大小要注意跟实际数据库一致。
