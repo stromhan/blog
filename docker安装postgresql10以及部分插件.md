@@ -210,11 +210,11 @@ build 镜像
 
 此时一个基于docker的postgresql已经启动成功。
 
-### 2.3 在一个宿主机上启动两个postgresql容器
+### 2.3 在一个宿主机上启动两个postgresql容器，并将
 
 #### 2.3.1 启动两个容器
 
-放后台运行，端口分别为5431，5433
+创建docker的volume
 
        docker volume create pgdata_5431
        docker volume create pgdata_5433
@@ -224,8 +224,42 @@ build 镜像
     DRIVER              VOLUME NAME
     local               pgdata_5431
     local               pgdata_5433
+    
+查看volume的存储位置
 
-分别启动两个容器
+    [root@iZuf678t3hp8rp7xchc3aoZ postgresql10_docker]# docker inspect pgdata_5431
+    [
+        {
+            "CreatedAt": "2019-11-16T19:23:40+08:00",
+            "Driver": "local",
+            "Labels": {},
+            "Mountpoint": "/var/lib/docker/volumes/pgdata_5431/_data",
+            "Name": "pgdata_5431",
+            "Options": {},
+            "Scope": "local"
+        }
+    ]
+    
+    [root@iZuf678t3hp8rp7xchc3aoZ postgresql10_docker]# docker inspect pgdata_5433
+    [
+        {
+            "CreatedAt": "2019-11-16T19:24:38+08:00",
+            "Driver": "local",
+            "Labels": {},
+            "Mountpoint": "/var/lib/docker/volumes/pgdata_5433/_data",
+            "Name": "pgdata_5433",
+            "Options": {},
+            "Scope": "local"
+        }
+    ]
+    
+如果需要将数据盘单独挂载，可以新建个目录mount到分区上，然后将/var/lib/docker/volumes/pgdata_5433目录下的文件移动过来，使用软连接的方式
+
+    mkdir /data/pgsql
+    mv /var/lib/docker/volumes/pgdata_5433 /data/pgsql
+    ln -s /data/pgsql/pgdata_5433 /var/lib/docker/volumes/pgdata_5433
+
+分别启动两个容器，端口分别为5431，5433
     
     docker run --name pgtest_5431 -d -p 5431:5432 -v pgdata_5431:/var/lib/pgsql/10/data postgres_10_centos7.6:3.0 & disown
     docker run --name pgtest_5433 -d -p 5433:5432 -v pgdata_5433:/var/lib/pgsql/10/data postgres_10_centos7.6:3.0 & disown
