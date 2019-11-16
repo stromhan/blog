@@ -125,7 +125,7 @@ Dockerfile  内容如下
 	    && wget -P /home https://yum.postgresql.org/10/redhat/rhel-7-x86_64/citus_10-9.0.1-1.rhel7.x86_64.rpm \
 	    && cd /home \
 	    && rpm -ivh citus_10-9.0.1-1.rhel7.x86_64.rpm \
-	    && sed -i s/"shared_preload_libraries ='\/usr\/pgsql-10\/lib\/plugin_debugger.so,timescaledb,pipelinedb'"/"shared_preload_libraries ='\/usr\/pgsql-10\/lib\/plugin_debugger.so,timescaledb,pipelinedb,citus'"/g $PGDATA/postgresql.conf
+	    && sed -i s/"shared_preload_libraries ='\/usr\/pgsql-10\/lib\/plugin_debugger.so,timescaledb,pipelinedb'"/"shared_preload_libraries ='citus,\/usr\/pgsql-10\/lib\/plugin_debugger.so,timescaledb,pipelinedb'"/g $PGDATA/postgresql.conf
     
     
     COPY docker-entrypoint.sh /usr/local/bin/
@@ -209,6 +209,96 @@ build 镜像
 
 
 此时一个基于docker的postgresql已经启动成功。
+
+### 2.3 在一个宿主机上启动两个postgresql容器
+
+#### 2.3.1 启动两个容器
+
+放后台运行，端口分别为5431，5433
+
+       docker volume create pgdata_5431
+       docker volume create pgdata_5433
+查看volume列表
+
+    [root@iZuf678t3hp8rp7xchc3aoZ ~]# docker volume list
+    DRIVER              VOLUME NAME
+    local               pgdata_5431
+    local               pgdata_5433
+
+分别启动两个容器
+    
+    docker run --name pgtest_5431 -d -p 5431:5432 -v pgdata_5431:/var/lib/pgsql/10/data postgres_10_centos7.6:3.0 & disown
+    docker run --name pgtest_5433 -d -p 5433:5432 -v pgdata_5433:/var/lib/pgsql/10/data postgres_10_centos7.6:3.0 & disown
+
+查看容器启动情况
+
+    [root@iZuf678t3hp8rp7xchc3aoZ ~]# docker ps -a
+    CONTAINER ID        IMAGE                       COMMAND                  CREATED             STATUS              PORTS                    NAMES
+    338f82d2e4e5        postgres_10_centos7.6:3.0   "docker-entrypoint.s…"   10 minutes ago      Up 10 minutes       0.0.0.0:5433->5432/tcp   pgtest_5433
+    3c027bee7482        postgres_10_centos7.6:3.0   "docker-entrypoint.s…"   11 minutes ago      Up 11 minutes       0.0.0.0:5431->5432/tcp   pgtest_5431
+
+查看宿主机端口
+
+    [root@iZuf678t3hp8rp7xchc3aoZ ~]# netstat -nlap | grep 5431
+    tcp6       0      0 :::5431                 :::*                    LISTEN      26246/docker-proxy  
+    [root@iZuf678t3hp8rp7xchc3aoZ ~]# netstat -nlap | grep 5433
+    tcp6       0      0 :::5433                 :::*                    LISTEN      26367/docker-proxy  
+
+#### 2.3.2 容器间数据库互相访问
+ 分别进入两个容器，创建超级数据库用户
+ 
+    docker exec -it pgtest_5431 /bin/bash
+    su - postgres
+    psql
+    create user app_user with superuser password 'app_user';
+    
+    docker exec -it pgtest_5433 /bin/bash
+    su - postgres
+    psql
+    create user app_user with superuser password 'app_user';
+ 查看容器的ip
+ 
+    [root@iZuf678t3hp8rp7xchc3aoZ postgresql10_docker]# docker exec -it pgtest_5433 'ifconfig'
+    eth0: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
+            inet 172.17.0.3  netmask 255.255.0.0  broadcast 172.17.255.255
+            ether 02:42:ac:11:00:03  txqueuelen 0  (Ethernet)
+            RX packets 37  bytes 3449 (3.3 KiB)
+            RX errors 0  dropped 0  overruns 0  frame 0
+            TX packets 42  bytes 3519 (3.4 KiB)
+            TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+
+    [root@iZuf678t3hp8rp7xchc3aoZ postgresql10_docker]# docker exec -it pgtest_5431 'ifconfig'
+    eth0: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
+            inet 172.17.0.2  netmask 255.255.0.0  broadcast 172.17.255.255
+            ether 02:42:ac:11:00:02  txqueuelen 0  (Ethernet)
+            RX packets 43  bytes 3622 (3.5 KiB)
+            RX errors 0  dropped 0  overruns 0  frame 0
+            TX packets 37  bytes 3388 (3.3 KiB)
+            TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+
+
+登陆对端和本地数据库
+
+    root@iZuf678t3hp8rp7xchc3aoZ ~]# docker exec -it pgtest_5433 /bin/bash
+    -bash-4.2$ psql 'user=app_user password=app_user dbname=postgres host=172.17.0.2'
+    psql (10.11)
+    Type "help" for help.
+    
+    postgres=# create table tab_test(id text);
+    CREATE TABLE
+
+    
+    -bash-4.2$ psql 'user=app_user password=app_user dbname=postgres host=172.17.0.3'
+    psql (10.11)
+    Type "help" for help.
+    
+    postgres=# create table tab_test(id text);
+    CREATE TABLE
+
+
+
+
+    
 
 ## 补充说明 ##
 推荐将数据目录挂载在宿主机上
